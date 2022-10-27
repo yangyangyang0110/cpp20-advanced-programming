@@ -14,7 +14,7 @@
 #include <iostream>
 
 struct Foo {
-  void operator co_await() {}
+    void operator co_await() {}
 };
 
 template<typename T>
@@ -23,6 +23,6 @@ auto operator co_await(std::future<T> fut) {}
 void test() {}
 
 int main() {
-  test();
-  return 0;
+    test();
+    return 0;
 }

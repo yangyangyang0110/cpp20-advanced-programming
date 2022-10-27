@@ -1,1 +1,5 @@
 add_subdirectory(coroutine)
+add_subdirectory(template)
+add_subdirectory(stl)
+add_subdirectory(base)
+add_subdirectory(range-)
