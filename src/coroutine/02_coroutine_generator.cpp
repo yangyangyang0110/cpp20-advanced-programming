@@ -48,7 +48,7 @@ struct Generator {
 
     ~promise_type() { std::cout << "~promise_type\n"; }
 
-   private:
+  private:
     T value_; // 不合理的设计.
   };
 
@@ -69,7 +69,7 @@ struct Generator {
   }
   void next() { handle_.resume(); }
 
- private:
+private:
   // stl::coroutine_handle 的本质是指向协程帧的指针，通常按值传递。
   std::coroutine_handle<promise_type> handle_;
 

@@ -39,7 +39,7 @@ struct Foo : NonAssignable {
     return os << "value: " << ins.value;
   }
 
- private:
+private:
   std::string value;
 };
 
@@ -55,11 +55,11 @@ struct Wrapper {
     return os << "foo: " << ins.foo_;
   }
 
- public:
+public:
   Wrapper() = default;
   ~Wrapper() noexcept = default;
 
- private:
+private:
   Foo foo_{""};
 };
 

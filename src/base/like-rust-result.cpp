@@ -45,7 +45,7 @@ double safe_divide(double x, double y) noexcept(false) {
  */
 template <class T, class E>
 struct Excepted {
- public:
+public:
   template <typename... Args>
   constexpr static inline Excepted<T, E> success(Args&&... args) {
     Excepted result;
@@ -62,7 +62,7 @@ struct Excepted {
     return result;
   }
 
- public:
+public:
   constexpr T& value() noexcept(false) {
     if (!has_value_)
       throw std::logic_error("No value");
@@ -81,7 +81,7 @@ struct Excepted {
     return has_value_ ? std::make_optional<T>(value_) : std::nullopt;
   }
 
- public:
+public:
   Excepted() : has_value_(false){};
 
   Excepted(const Excepted& other) : has_value_(other.has_value_) {
@@ -112,7 +112,7 @@ struct Excepted {
     }
   };
 
- private:
+private:
   // copy and swap
   void swap(Excepted& other) {
     using std::swap;
@@ -140,7 +140,7 @@ struct Excepted {
     }
   }
 
- private:
+private:
   bool has_value_;
   union {
     T value_;
@@ -167,12 +167,12 @@ struct Foo {
     return os << foo.data << std::endl;
   }
 
- public:
+public:
   Foo() = default;
   Foo(Foo&&) noexcept = default;
   ~Foo() noexcept = default;
 
- private:
+private:
   std::string data = "I'm a Foo";
 };
 

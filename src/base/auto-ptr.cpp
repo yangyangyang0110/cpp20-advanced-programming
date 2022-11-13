@@ -60,20 +60,20 @@ struct Redis {
 };
 
 class Connection {
- public:
+public:
   explicit Connection(Redis&& redis);
   void resetRedis(Redis&& redis) noexcept;
 
- private:
+private:
   std::shared_ptr<Redis> redis_;
 };
 
 class ConnectionProxy {
- public:
+public:
   static void setPtr(std::weak_ptr<Redis>&& ptr) noexcept;
   static void notify() noexcept;
 
- private:
+private:
   inline static std::weak_ptr<Redis> ptr_;
 };
 

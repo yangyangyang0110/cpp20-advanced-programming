@@ -207,7 +207,7 @@ namespace spdlog::sinks {
 
 template <typename Mutex>
 class easy_file_sink final : public base_sink<Mutex> {
- public:
+public:
   easy_file_sink(
       filename_t base_log_dir,
       filename_t log_basename,
@@ -243,7 +243,7 @@ class easy_file_sink final : public base_sink<Mutex> {
     return file_helper_.filename();
   }
 
- protected:
+protected:
   void sink_it_(const details::log_msg& msg) override {
     memory_buf_t formatted;
     base_sink<Mutex>::formatter_->format(msg, formatted);
@@ -307,7 +307,7 @@ class easy_file_sink final : public base_sink<Mutex> {
 
   void flush_() override { file_helper_.flush(); }
 
- private:
+private:
   tm now_tm(log_clock::time_point tp) {
     time_t t_now = log_clock::to_time_t(tp);
     return spdlog::details::os::localtime(t_now);
@@ -435,7 +435,7 @@ inline std::shared_ptr<logger> easy_logger_st(
 namespace helper::logger {
 
 class LoggerGenerator {
- public:
+public:
   static spdlog::level::level_enum to_spdlog_level(
       const LogLevel& log_level) noexcept(false) {
     static std::map<LogLevel, spdlog::level::level_enum>

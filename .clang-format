@@ -6,7 +6,7 @@
 # - IncludeIsMainRegex: May cause errors, as it may reorder includes.
 # - IncludeCategories: May cause errors, as it may reorder includes.
 ---
-AccessModifierOffset: -1
+AccessModifierOffset: -2
 AlignAfterOpenBracket: AlwaysBreak
 AlignConsecutiveMacros: None
 AlignConsecutiveAssignments: None

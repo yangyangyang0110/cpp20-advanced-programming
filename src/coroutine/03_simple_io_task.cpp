@@ -99,7 +99,7 @@ struct Generator {
 
     std::exception_ptr exception_;
 
-   private:
+  private:
     T value_;
   };
 
@@ -133,7 +133,7 @@ struct Generator {
     return handle_.promise().result();
   }
 
- private:
+private:
   std::coroutine_handle<promise_type> handle_;
   bool full_ = false;
 

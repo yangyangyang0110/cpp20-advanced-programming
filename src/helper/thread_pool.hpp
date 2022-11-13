@@ -54,7 +54,7 @@ class ThreadPool {
   std::vector<std::thread> workers_;
   thread_safe_queue<std::packaged_task<void(void)>> tasks_;
 
- public:
+public:
   explicit ThreadPool(size_t n = std::thread::hardware_concurrency())
       : is_terminal_(false) {
     workers_.reserve(n);

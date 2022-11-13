@@ -27,7 +27,7 @@ struct FibonacciGenerator {
     return a2;
   }
 
- private:
+private:
   T a0_, a1_;
 };
 

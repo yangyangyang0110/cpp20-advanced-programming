@@ -19,7 +19,7 @@
 
 template <typename T>
 class thread_safe_queue {
- public:
+public:
   using value_type = T;
 
   explicit thread_safe_queue() = default;
@@ -82,7 +82,7 @@ class thread_safe_queue {
     return *this;
   };
 
- private:
+private:
   mutable std::mutex mutex_;
   std::queue<value_type> queue_;
   std::condition_variable cond_;

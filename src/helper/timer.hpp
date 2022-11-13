@@ -45,7 +45,7 @@ struct Timer {
         std::chrono::system_clock::now() - now_);
   }
 
- private:
+private:
   std::chrono::system_clock::time_point now_;
 };
 
