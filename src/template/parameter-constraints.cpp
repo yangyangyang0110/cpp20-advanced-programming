@@ -21,18 +21,20 @@ template <int x, int min = 0, int max = 10>
 inline constexpr bool is_valid_value = (x >= min && x <= max);
 
 template <int x, int min = 0, int max = 10>
-concept is_valid_value_cpp20 = requires { x >= min &&x <= max; };
+concept is_valid_value_cpp20 = requires { x >= min&& x <= max; };
 
-template <int x, typename std::enable_if<is_valid_value<x>, void *>::type = nullptr>
-void f() noexcept
-{
-    std::cout << "x = " << x << std::endl;
+template <
+    int x,
+    typename std::enable_if<is_valid_value<x>, void*>::type = nullptr>
+void f() noexcept {
+  std::cout << "x = " << x << std::endl;
 }
 
-void test() { f<1>(); }
+void test() {
+  f<1>();
+}
 
-int main()
-{
-    test();
-    return 0;
+int main() {
+  test();
+  return 0;
 }

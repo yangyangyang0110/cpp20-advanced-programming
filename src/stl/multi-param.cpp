@@ -14,41 +14,42 @@
 #include <variant>
 
 struct PersonParam {
-    float threshold;
+  float threshold;
 
-    friend std::ostream &operator<<(std::ostream &os, const PersonParam &param) noexcept
-    {
-        return os << "threshold: " << param.threshold;
-    }
+  friend std::ostream& operator<<(
+      std::ostream& os, const PersonParam& param) noexcept {
+    return os << "threshold: " << param.threshold;
+  }
 };
 
 struct FaceParam {
-    int minimum_face, maximum_face;
-    friend std::ostream &operator<<(std::ostream &os, const FaceParam &param) noexcept
-    {
-        return os << "minimum-face: " << param.minimum_face
-                  << " maximum-face: " << param.maximum_face;
-    }
+  int minimum_face, maximum_face;
+  friend std::ostream& operator<<(
+      std::ostream& os, const FaceParam& param) noexcept {
+    return os << "minimum-face: " << param.minimum_face
+              << " maximum-face: " << param.maximum_face;
+  }
 };
 
 using Params = std::variant<PersonParam, FaceParam>;
 
-void test()
-{
-    Params param;
-    param = PersonParam{.threshold = 0.7f};
-    param = FaceParam{.minimum_face = 10, .maximum_face = 100};
+void test() {
+  Params param;
+  param = PersonParam{.threshold = 0.7f};
+  param = FaceParam{.minimum_face = 10, .maximum_face = 100};
 
-    if (const auto *face_param = std::get_if<FaceParam>(&param)) {
-        std::cout << *face_param << std::endl;
-    } else {
-    }
+  if (const auto* face_param = std::get_if<FaceParam>(&param)) {
+    std::cout << *face_param << std::endl;
+  } else if (const auto* person_param = std::get_if<PersonParam>(&param)) {
+    std::cout << *person_param << std::endl;
+  } else {
+    throw std::runtime_error("");
+  }
 
-    std::cout << "Hello, world!" << std::endl;
+  std::cout << "Hello, world!" << std::endl;
 }
 
-int main()
-{
-    test();
-    return 0;
+int main() {
+  test();
+  return 0;
 }

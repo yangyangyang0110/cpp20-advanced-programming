@@ -19,40 +19,40 @@ struct TextFile;
 struct VideoFile;
 
 struct Visitor {
-    virtual void visit(VideoFile &) const noexcept = 0;
-    virtual void visit(TextFile &) const noexcept = 0;
-    virtual ~Visitor() = default;
+  virtual void visit(VideoFile&) const noexcept = 0;
+  virtual void visit(TextFile&) const noexcept = 0;
+  virtual ~Visitor() = default;
 };
 
 struct Element {
-    virtual void accept(Visitor &) = 0;
-    virtual ~Element() = default;
+  virtual void accept(Visitor&) = 0;
+  virtual ~Element() = default;
 };
 #if 1
-template <typename Derived> struct AutoDispatchElement : public Element {
-    void accept(Visitor &visitor) override { visitor.visit(static_cast<Derived &>(*this)); }
+template <typename Derived>
+struct AutoDispatchElement : public Element {
+  void accept(Visitor& visitor) override {
+    visitor.visit(static_cast<Derived&>(*this));
+  }
 };
 
-struct VideoFile : AutoDispatchElement<VideoFile> {
-};
+struct VideoFile : AutoDispatchElement<VideoFile> {};
 
-struct TextFile : AutoDispatchElement<VideoFile> {
-};
+struct TextFile : AutoDispatchElement<VideoFile> {};
 #else
 
 struct VideoFile : Element {
-    void accept(Visitor &visitor) override { visitor.visit(*this); }
+  void accept(Visitor& visitor) override { visitor.visit(*this); }
 };
 
 struct TextFile : Element {
-    void accept(Visitor &visitor) override { visitor.visit(*this); }
+  void accept(Visitor& visitor) override { visitor.visit(*this); }
 };
 #endif
 
 void test() {}
 
-int main()
-{
-    test();
-    return 0;
+int main() {
+  test();
+  return 0;
 }

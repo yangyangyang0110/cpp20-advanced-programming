@@ -16,26 +16,28 @@
 #ifdef __DEBUG__
 using ASSERT = assert;
 #else
-#define ASSERT(x)                                                                                  \
-    if (!(x)) throw std::runtime_error("Assertion failed: " #x);
+#define ASSERT(x) \
+  if (!(x))       \
+    throw std::runtime_error("Assertion failed: " #x);
 #endif
 
 /**
- * @brief 如何优化的转换不同Enum类型, 以及对于未处理的新枚举值会显示提示给用户(报错等方式)
+ * @brief 如何优化的转换不同Enum类型,
+ * 以及对于未处理的新枚举值会显示提示给用户(报错等方式)
  */
 
 enum class RequestCode {
-    Ok            = 0,
-    InvalidFile   = 1,
-    InvalidMethod = 2,
-    NewCode       = 100,
+  Ok = 0,
+  InvalidFile = 1,
+  InvalidMethod = 2,
+  NewCode = 100,
 };
 
 enum class ResponseCode {
-    Ok                   = -1,
-    InvalidRequestMethod = 1,
-    InvalidFile          = 2,
-    PlaceHolderCode      = -100,
+  Ok = -1,
+  InvalidRequestMethod = 1,
+  InvalidFile = 2,
+  PlaceHolderCode = -100,
 };
 
 /**
@@ -44,29 +46,31 @@ enum class ResponseCode {
  *  否则抛出运行期错误, TODO: 如何编译期报错)
  */
 
-ResponseCode getResponseCode(const RequestCode &code) noexcept(false)
-{
-    if (code == RequestCode::Ok) return ResponseCode::Ok;
-    else if (code == RequestCode::InvalidMethod) return ResponseCode::InvalidRequestMethod;
-    else if (code == RequestCode::InvalidFile) return ResponseCode::InvalidFile;
-    throw std::bad_cast();
+ResponseCode getResponseCode(const RequestCode& code) noexcept(false) {
+  if (code == RequestCode::Ok)
+    return ResponseCode::Ok;
+  else if (code == RequestCode::InvalidMethod)
+    return ResponseCode::InvalidRequestMethod;
+  else if (code == RequestCode::InvalidFile)
+    return ResponseCode::InvalidFile;
+  throw std::bad_cast();
 }
 
-void test_by_function()
-{
-    const auto code = RequestCode::Ok;
-    ASSERT(ResponseCode::Ok == getResponseCode(code))
-    try {
-        ASSERT(ResponseCode::PlaceHolderCode == getResponseCode(code))
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
+void test_by_function() {
+  const auto code = RequestCode::Ok;
+  ASSERT(ResponseCode::Ok == getResponseCode(code))
+  try {
+    ASSERT(ResponseCode::PlaceHolderCode == getResponseCode(code))
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
 
-    try {
-        ASSERT(ResponseCode::PlaceHolderCode == getResponseCode(RequestCode::NewCode))
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
+  try {
+    ASSERT(
+        ResponseCode::PlaceHolderCode == getResponseCode(RequestCode::NewCode))
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
 }
 
 /**
@@ -76,42 +80,48 @@ void test_by_function()
 
 namespace detail::m2 {
 
-template <RequestCode> struct always_false : public std::false_type {
+template <RequestCode>
+struct always_false : public std::false_type {};
+
+template <RequestCode code>
+struct ToResponseCode {
+  // TODO: 求值上下文中报错信息不友好
+  static_assert(
+      always_false<code>::value, "Assertion failed, Enum value can't matched.");
 };
 
-template <RequestCode code> struct ToResponseCode {
-    // TODO: 求值上下文中报错信息不友好
-    static_assert(always_false<code>::value, "Assertion failed, Enum value can't matched.");
+template <>
+struct ToResponseCode<RequestCode::Ok> {
+  static constexpr ResponseCode value = ResponseCode::Ok;
 };
 
-template <> struct ToResponseCode<RequestCode::Ok> {
-    static constexpr ResponseCode value = ResponseCode::Ok;
+template <>
+struct ToResponseCode<RequestCode::InvalidFile> {
+  static constexpr ResponseCode value = ResponseCode::InvalidFile;
 };
 
-template <> struct ToResponseCode<RequestCode::InvalidFile> {
-    static constexpr ResponseCode value = ResponseCode::InvalidFile;
-};
-
-template <> struct ToResponseCode<RequestCode::InvalidMethod> {
-    static constexpr ResponseCode value = ResponseCode::InvalidRequestMethod;
+template <>
+struct ToResponseCode<RequestCode::InvalidMethod> {
+  static constexpr ResponseCode value = ResponseCode::InvalidRequestMethod;
 };
 
 } // namespace detail::m2
 
-template <RequestCode code> static constexpr ResponseCode getResponseCodeValue =
+template <RequestCode code>
+static constexpr ResponseCode getResponseCodeValue =
     detail::m2::ToResponseCode<code>::value;
 
-void test_by_pattern_match()
-{
-    const auto code = RequestCode::Ok;
-    ASSERT(ResponseCode::Ok == getResponseCodeValue<code>)
-    try {
-        ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValue<code>)
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
+void test_by_pattern_match() {
+  const auto code = RequestCode::Ok;
+  ASSERT(ResponseCode::Ok == getResponseCodeValue<code>)
+  try {
+    ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValue<code>)
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
 
-    // ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValue<RequestCode::NewCode>)
+  // ASSERT(ResponseCode::PlaceHolderCode ==
+  // getResponseCodeValue<RequestCode::NewCode>)
 }
 
 /**
@@ -120,66 +130,71 @@ void test_by_pattern_match()
 
 namespace detail::m3 {
 
-template <RequestCode code> struct ToResponseCode : public std::integral_constant<void *, nullptr> {
+template <RequestCode code>
+struct ToResponseCode : public std::integral_constant<void*, nullptr> {};
+
+template <>
+struct ToResponseCode<RequestCode::Ok>
+    : public std::integral_constant<ResponseCode, ResponseCode::Ok> {};
+
+template <>
+struct ToResponseCode<RequestCode::InvalidFile>
+    : public std::integral_constant<ResponseCode, ResponseCode::InvalidFile> {};
+
+template <>
+struct ToResponseCode<RequestCode::InvalidMethod>
+    : public std::
+          integral_constant<ResponseCode, ResponseCode::InvalidRequestMethod> {
 };
 
-template <> struct ToResponseCode<RequestCode::Ok>
-    : public std::integral_constant<ResponseCode, ResponseCode::Ok> {
-};
-
-template <> struct ToResponseCode<RequestCode::InvalidFile>
-    : public std::integral_constant<ResponseCode, ResponseCode::InvalidFile> {
-};
-
-template <> struct ToResponseCode<RequestCode::InvalidMethod>
-    : public std::integral_constant<ResponseCode, ResponseCode::InvalidRequestMethod> {
-};
-
-template <RequestCode code> struct ToResponseCodeProxy : public ToResponseCode<code> {
-};
+template <RequestCode code>
+struct ToResponseCodeProxy : public ToResponseCode<code> {};
 
 } // namespace detail::m3
 
 template <
     RequestCode code,
     std::enable_if_t<std::is_same_v<
-        ResponseCode, std::remove_cvref_t<decltype(detail::m3::ToResponseCode<code>::value)>>>>
-ResponseCode getResponseCodeValueM3Func()
-{
-    return detail::m3::ToResponseCodeProxy<code>::value;
+        ResponseCode,
+        std::remove_cvref_t<
+            decltype(detail::m3::ToResponseCode<code>::value)>>>>
+ResponseCode getResponseCodeValueM3Func() {
+  return detail::m3::ToResponseCodeProxy<code>::value;
 }
 
-template <RequestCode code,
-          std::enable_if_t<
-              std::is_same_v<ResponseCode, std::remove_cvref_t<
-                                               decltype(detail::m3::ToResponseCode<code>::value)>>,
-              void *> = nullptr>
-static constexpr ResponseCode getResponseCodeValueM3 = detail::m3::ToResponseCodeProxy<code>::value;
+template <
+    RequestCode code,
+    std::enable_if_t<
+        std::is_same_v<
+            ResponseCode,
+            std::remove_cvref_t<
+                decltype(detail::m3::ToResponseCode<code>::value)>>,
+        void*> = nullptr>
+static constexpr ResponseCode getResponseCodeValueM3 =
+    detail::m3::ToResponseCodeProxy<code>::value;
 
-void test_by_pattern_match_friendly_error()
-{
-    constexpr auto code = RequestCode::Ok;
-    ASSERT(ResponseCode::Ok == getResponseCodeValueM3<code>)
-    try {
-        ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValueM3<code>)
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
-    constexpr auto newCode = RequestCode::Ok;
+void test_by_pattern_match_friendly_error() {
+  constexpr auto code = RequestCode::Ok;
+  ASSERT(ResponseCode::Ok == getResponseCodeValueM3<code>)
+  try {
+    ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValueM3<code>)
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
+  constexpr auto newCode = RequestCode::Ok;
 
-    // ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValueM3<newCode>)
-    // ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValueM3Func<newCode>())
+  // ASSERT(ResponseCode::PlaceHolderCode == getResponseCodeValueM3<newCode>)
+  // ASSERT(ResponseCode::PlaceHolderCode ==
+  // getResponseCodeValueM3Func<newCode>())
 }
 
-void test()
-{
-    test_by_function();
-    test_by_pattern_match();
-    test_by_pattern_match_friendly_error();
+void test() {
+  test_by_function();
+  test_by_pattern_match();
+  test_by_pattern_match_friendly_error();
 }
 
-int main()
-{
-    test();
-    return 0;
+int main() {
+  test();
+  return 0;
 }

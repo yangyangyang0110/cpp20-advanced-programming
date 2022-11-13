@@ -12,18 +12,20 @@
 #include <type_traits>
 
 namespace detail {
-template <typename T> constexpr bool always_false = false;
-template <typename T> T &&declval() noexcept
-{
-    static_assert(always_false<T>, "declval not allowed in an evaluated context");
+template <typename T>
+constexpr bool always_false = false;
+template <typename T>
+T&& declval() noexcept {
+  static_assert(always_false<T>, "declval not allowed in an evaluated context");
 }
 
 } // namespace detail
 
-void test() { static_assert(std::is_same_v<decltype(detail::declval<int>()), int &&>); }
+void test() {
+  static_assert(std::is_same_v<decltype(detail::declval<int>()), int&&>);
+}
 
-int main()
-{
-    test();
-    return 0;
+int main() {
+  test();
+  return 0;
 }

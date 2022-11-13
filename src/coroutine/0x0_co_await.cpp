@@ -7,22 +7,22 @@
  * Last Modified: 2022-08-28 13:20:44
  * Modified By: yangyangyang (yangyangyang0110@outlook.com>)
  * -----
- * Copyright 2022 - 2022  ,  
+ * Copyright 2022 - 2022  ,
  */
 #include <coroutine>
 #include <future>
 #include <iostream>
 
 struct Foo {
-    void operator co_await() {}
+  void operator co_await() {}
 };
 
-template<typename T>
+template <typename T>
 auto operator co_await(std::future<T> fut) {}
 
 void test() {}
 
 int main() {
-    test();
-    return 0;
+  test();
+  return 0;
 }
