@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #find_package(spdlog REQUIRED)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(spdlog)
+include(json)
 
 
 function(dynamic_build_execute prefix)
@@ -41,6 +42,7 @@ function(dynamic_build_execute prefix)
             PRIVATE
             pthread
             spdlog::spdlog
+            nlohmann_json::nlohmann_json
         )
     endforeach ()
 endfunction()
