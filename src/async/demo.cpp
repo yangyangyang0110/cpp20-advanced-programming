@@ -73,9 +73,8 @@ void test() {
   Socket socket("Some socket data.");
   LOG_PRINT("Starting...");
   while (true) {
-    auto opt = SimpleFuture<Socket>::poll(
-        socket, []() { std::cout << "Callback called" << std::endl; });
-    if (opt) {
+    if (auto opt = SimpleFuture<Socket>::poll(
+            socket, []() { std::cout << "Callback called" << std::endl; })) {
       LOG_PRINT("get data: ", *opt);
       break;
     }

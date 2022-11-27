@@ -24,7 +24,7 @@ namespace detail {
 
 template <typename Tuple, std::size_t... Index>
 static void LOG_PRINT_IMPL(Tuple&& tuple, std::index_sequence<Index...>) noexcept {
-  ((std::cout << (Index != 0 ? " " : "") << std::get<Index>(tuple)), ...);
+  ((std::cout << (Index != 0 ? ", " : "") << std::get<Index>(tuple)), ...);
 }
 
 } // namespace detail

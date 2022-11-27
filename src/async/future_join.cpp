@@ -15,6 +15,10 @@
 #include <vector>
 #include "helper/common.hpp"
 
+enum class Status {
+  Success = 0,
+};
+
 template <typename T>
 std::vector<T> join(std::vector<std::future<T>>& futures) noexcept {
   std::vector<T> results(futures.size());

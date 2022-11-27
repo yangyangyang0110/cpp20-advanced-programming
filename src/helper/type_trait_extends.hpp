@@ -15,6 +15,7 @@
 #include <type_traits>
 
 namespace detail {
+// SFINAE
 template <typename T, typename Void = void>
 struct has_value_type {
   constexpr static inline bool value = false;
