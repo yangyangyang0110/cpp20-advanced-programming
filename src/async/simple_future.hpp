@@ -15,14 +15,13 @@
 template <typename T>
 concept FutureAble = requires { has_value_type_v<T>; };
 
-
 using WakeupFunction = std::function<void()>;
 
 // Define Interface.
 template <FutureAble T>
 struct SimpleFuture {
   using value_type = get_value_type_t<T>;
-  std::optional<value_type> poll(void *, const WakeupFunction& wake) noexcept {
+  std::optional<value_type> poll(T& handler, const WakeupFunction& wake) noexcept {
     static_assert(is_always_false_v<value_type>, "This is Only Interface.");
   }
 };

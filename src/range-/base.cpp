@@ -11,21 +11,34 @@
  */
 
 #include <iostream>
-#include <ranges>
+#include "range/v3/algorithm.hpp"
+#include "range/v3/numeric.hpp"
+#include "range/v3/view.hpp"
 
-namespace ranges = std::ranges;
-namespace views = std::ranges::views;
+auto is_six = [](int i) { return i == 6; };
+using std::cout;
 
 void test() {
-  auto res = std::views::iota(1, 10) |
-      std::views::transform([](const auto& n) { return n * n; }) |
-      std::views::filter([](const auto& n) { return n % 2 == 1; });
+  int sum = ranges::accumulate(
+      ranges::views::ints(1, ranges::unreachable) |
+          ranges::views::transform([](int i) { return i * i; }) | ranges::views::take(10),
+      0);
+  cout << sum << std::endl;
 
-  for (const auto j : res) {
-    std::cout << j << std::endl;
-  }
+  std::vector<int> v{6, 2, 3, 4, 5, 6};
+  cout << std::boolalpha;
+  cout << "vector: " << ranges::views::all(v) << '\n';
 
-  // std::cout << std::sum(res) << std::endl;
+  cout << "vector any_of is_six: " << ranges::any_of(v, is_six) << '\n';
+  cout << "vector all_of is_six: " << ranges::all_of(v, is_six) << '\n';
+  cout << "vector none_of is_six: " << ranges::none_of(v, is_six) << '\n';
+
+  std::vector<int> const vi{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  using namespace ranges;
+  auto rng = vi | views::filter([](int i) { return i % 2 == 0; }) |
+      views::transform([](int i) { return std::to_string(i); });
+  // prints: [2,4,6,8,10]
+  cout << rng << '\n';
 }
 
 int main() {
