@@ -20,87 +20,83 @@
 
 #include "./buffer.hpp"
 
-namespace thread_pool {
-
-namespace _utils {
-
-#if __cplusplus <= 201402L
-template <
-    typename Func,
-    typename... Args,
-    typename RetType = typename std::result_of<Func(Args...)>::type>
-inline auto make_task(Func&& func, Args&&... args)
-    -> std::packaged_task<RetType(void)> {
-#else
-template <
-    typename Func,
-    typename... Args,
-    typename RetType = std::result_of_t<Func(Args...)>>
-inline auto make_task(Func&& func, Args&&... args)
-    -> std::packaged_task<RetType(void)> {
-#endif
-  return std::packaged_task<RetType(void)>(
-      std::bind(std::forward<Func>(func), std::forward<Args>(args)...));
-}
-
-} // namespace _utils
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <thread>
+using namespace std::chrono_literals;
 
 class ThreadPool {
-  /**
-   * support get function return value.
-   * TODO: worker extract to outside.
-   */
-  std::atomic_bool is_terminal_;
-  std::vector<std::thread> workers_;
-  thread_safe_queue<std::packaged_task<void(void)>> tasks_;
+  std::vector<std::thread> threads_;
+  std::queue<std::function<void()>> task_queue_;
+  mutable std::mutex mutex_;
+  mutable std::condition_variable cv_;
+  std::atomic<bool> should_terminate_;
+  std::atomic<int32_t> action_thread_;
 
 public:
-  explicit ThreadPool(size_t n = std::thread::hardware_concurrency())
-      : is_terminal_(false) {
-    workers_.reserve(n);
-    for (auto i = 0; i < n; ++i)
-      workers_.emplace_back(std::thread(
-          [this](const std::string& id) {
-            while (!is_terminal_) {
-              decltype(tasks_)::value_type task;
-              if (tasks_.try_pop(task)) {
-                INFO("[{}] got a job, executing...", id);
-                task();
-              }
-            }
-          },
-          fmt::format("worker_{}", i)));
+  ~ThreadPool() {
+    should_terminate_.store(true, std::memory_order_relaxed);
+    cv_.notify_all();
+    for (auto& t : threads_) {
+      t.join();
+    }
+    threads_.clear();
   }
 
-  ~ThreadPool() {
-    is_terminal_.store(true);
-    for (auto& worker : workers_)
-      if (worker.joinable())
-        worker.join();
+  explicit ThreadPool(unsigned int num_thread = std::thread::hardware_concurrency())
+      : action_thread_(0) {
+    should_terminate_.store(false, std::memory_order_relaxed);
+    threads_.reserve(num_thread);
+    for (int i = 0; i < num_thread; ++i) {
+      threads_.emplace_back(std::thread(
+          [this](std::string const& thread_name) {
+            while (true) {
+              std::function<void(void)> task;
+              {
+                std::unique_lock lock(mutex_);
+                cv_.wait(lock, [this]() {
+                  return should_terminate_.load(std::memory_order_relaxed) ||
+                      !task_queue_.empty();
+                });
+                if (should_terminate_.load(std::memory_order_relaxed) &&
+                    task_queue_.empty()) {
+                  break;
+                }
+                task = std::move(task_queue_.front());
+                task_queue_.pop();
+              }
+
+              ++action_thread_;
+              task();
+              --action_thread_;
+            }
+          },
+          std::string("worker-").append(std::to_string(i))));
+    }
   }
 
   template <
-      typename Function,
-      typename RetType = typename std::result_of<Function(void)>::type>
-  auto execute(Function f) -> std::future<RetType> {
-    std::packaged_task<RetType()> task(std::move(f));
-    auto res = task.get_future();
-#if __cplusplus >= 201402L
-    // move semantic lambda. c++14.
-    auto payload = [task = std::move(task)]() mutable -> void { task(); };
-#else
-    // todo: optimizer.
-    auto task_ptr = std::make_shared<decltype(task)>(std::move(task));
-    auto payload = [task_ptr]() { task_ptr->operator()(); };
-    // std::packaged_task<void(void)> payload = std::bind(
-    //     [](const std::unique_ptr<decltype(task)> &task_ptr) -> void {
-    //     task_ptr-> ; }, std::move(task));
-#endif
-    tasks_.emplace(decltype(tasks_)::value_type(std::move(payload))); // cast.
-    return res;
+      typename Func,
+      typename... Args,
+      typename RetType = std::invoke_result_t<Func, Args...>>
+  std::future<RetType> execute(Func&& func, Args&&... args) {
+    std::packaged_task<RetType(void)> task(
+        std::bind(std::forward<Func>(func), std::forward<Args>(args)...));
+    auto fut = task.get_future();
+
+    std::lock_guard lock(mutex_);
+    // move capture. c++14
+    // task_queue_.emplace([task = std::move(task)]() mutable { task(); });
+    task_queue_.emplace([taskPtr = std::make_shared<decltype(task)>(
+                             std::move(task))]() mutable { (*taskPtr)(); });
+    cv_.notify_all();
+    return fut;
   }
 };
-
-} // namespace thread_pool
 
 #endif // CPP20_ADVANCED_PROGRAMMING_THREAD_POOL_HPP

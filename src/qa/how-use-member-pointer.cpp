@@ -15,11 +15,7 @@
 #include <type_traits>
 
 template <class Class, typename T>
-void member_pointer(typename T::Class* p) {
-  // if constexpr (std::is_invocable_v<decltype(p)>()) {
-  // p->operator();
-  // }
-}
+void member_pointer(typename T::Class* p) {}
 
 struct Foo {
   std::string data;

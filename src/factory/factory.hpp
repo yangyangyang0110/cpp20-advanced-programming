@@ -23,6 +23,7 @@ public:
   // using Creator = std::function<std::shared_ptr<Inference>()>;
   using Creator = void*;
   using CreatorRegistry = std::map<const std::string, Creator>;
+  using CreatorTypes = std::map<std::string, std::tuple<int>>;
 
   template <typename T, typename... Args>
   static std::shared_ptr<T> create(
@@ -47,10 +48,6 @@ private:
     static CreatorRegistry creatorRegistry;
     return creatorRegistry;
   }
-
-  // static auto& getStringTypes() noexcept {
-  //   std::map<std::string, std::vector<>>
-  // }
 };
 
 // template <
