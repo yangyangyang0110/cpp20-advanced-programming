@@ -41,7 +41,7 @@ public:
 
   [[nodiscard]] value_type read_buf() const noexcept { return buffer_data_; }
 
-  void set_wakeup_callback(const std::function<void()>& wakeup_callback) noexcept {}
+  void set_wakeup_callback(const WakeupFunction& wakeup_callback) noexcept {}
 
 private:
   value_type buffer_data_;

@@ -12,6 +12,10 @@
 #ifndef CPP20_ADVANCED_PROGRAMMING_SIMPLE_FUTURE_HPP
 #define CPP20_ADVANCED_PROGRAMMING_SIMPLE_FUTURE_HPP
 
+#include <functional>
+#include <optional>
+#include "helper/type_trait_extends.hpp"
+
 template <typename T>
 concept FutureAble = requires { has_value_type_v<T>; };
 
