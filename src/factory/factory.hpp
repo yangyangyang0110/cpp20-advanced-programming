@@ -18,6 +18,37 @@
 #include <map>
 #include <memory>
 
+#if 0
+class Factory {
+public:
+  // using Creator = std::function<std::shared_ptr<Inference>()>;
+  using Creator = void*;
+  using CreatorRegistry = std::map<const std::string, Creator>;
+
+  template <typename T, typename... Args>
+  static std::shared_ptr<T> create(const std::string_view name, Args&&... args) noexcept {
+    using CreatorFunction = std::shared_ptr<T> (*)(Args && ...);
+    auto creatorRegistry = getCreatorRegistry();
+    auto it = creatorRegistry.find(std::string(name));
+    return it != creatorRegistry.end()
+        ? reinterpret_cast<CreatorFunction>(it->second)(std::forward<Args>(args)...)
+        : nullptr;
+  }
+
+  static bool registry(const std::string& name, Creator creator) noexcept {
+    printf(">>> addCreator, name: %s\n", name.c_str());
+    getCreatorRegistry()[name] = creator;
+    return true;
+  }
+
+private:
+  static CreatorRegistry& getCreatorRegistry() noexcept {
+    static CreatorRegistry creatorRegistry;
+    return creatorRegistry;
+  }
+};
+#else
+
 class Factory {
 public:
   // using Creator = std::function<std::shared_ptr<Inference>()>;
@@ -26,14 +57,13 @@ public:
   using CreatorTypes = std::map<std::string, std::tuple<int>>;
 
   template <typename T, typename... Args>
-  static std::shared_ptr<T> create(
+  static std::shared_ptr<T> getObject(
       const std::string_view name, Args&&... args) noexcept {
     using CreatorFunction = std::shared_ptr<T> (*)(Args && ...);
     auto creatorRegistry = getCreatorRegistry();
     auto it = creatorRegistry.find(std::string(name));
     return it != creatorRegistry.end()
-        ? reinterpret_cast<CreatorFunction>(it->second)(
-              std::forward<Args>(args)...)
+        ? reinterpret_cast<CreatorFunction>(it->second)(std::forward<Args>(args)...)
         : nullptr;
   }
 
@@ -50,30 +80,10 @@ private:
   }
 };
 
-// template <
-//     typename T,
-//     typename... Args,
-//     std::enable_if_t<std::is_constructible_v<T, Args...>>* = nullptr>
-// std::shared_ptr<T> __create(Args&&... args) noexcept(
-//     std::is_nothrow_constructible_v<T, Args...>) {
-//   return std::make_shared<T>(std::forward<Args>(args)...);
-// }
-
-// template <typename T, typename... Args>
-// std::shared_ptr<T> __create(Args&&... args) {
-//   return std::make_shared<T>(std::forward<Args>(args)...);
-// }
-
-// template <class Class, typename... Args>
-// bool REGISTER_CLASS() {
-//   return std::tuple_size_v<decltype(std::tuple<Args...>())> > 0
-//       ? REGISTER_CLASS_ARGS_IMPL(Class, Args...)
-//       : REGISTER_CLASS_IMPL(Class);
-// }
-
-#define REGISTER_CLASS(type, ...)   \
-  bool b##type = Factory::registry( \
-      #type, (Factory::Creator)(&std::make_shared<type, __VA_ARGS__>))
+#endif
+#define REGISTER_CLASS(type, ...) \
+  bool b##type =                  \
+      Factory::registry(#type, (Factory::Creator)(&std::make_shared<type, __VA_ARGS__>))
 
 // #define REGISTER_CLASS(type) \
 //   bool b##type =             \

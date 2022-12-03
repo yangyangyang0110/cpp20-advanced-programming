@@ -14,9 +14,8 @@
 
 #define CREATE_V(type, ...) Factory::create<type>(#type, __VA_ARGS__)
 
-#define COUNT_ARGS(...)                                    \
-  std::cout << std::tuple_size_v<decltype(std::make_tuple( \
-                   __VA_ARGS__))> << std::endl
+#define COUNT_ARGS(...) \
+  std::cout << std::tuple_size_v<decltype(std::make_tuple(__VA_ARGS__))> << std::endl
 
 struct Foo {
   Foo(int a, int b) noexcept : a(a), b(b) {}
@@ -30,29 +29,14 @@ private:
 };
 
 int main() {
-  Foo foo(10, 20);
-  std::cout << foo << std::endl;
-
-  // auto foo = call<Foo>(10, 20);
+  // Foo foo(10, 20);
   // std::cout << foo << std::endl;
 
-  // std::map<std::string, Curried> maps{
-  //     {"foo", }};
+  Factory::registry("Foo", (void*)std::make_shared<Foo, int, int>);
 
-  // auto r = maps.at("foo").operator()(3, 4);
-  // std::cout << r << std::endl;
+  auto f = Factory::getObject<Foo>("Foo", 30, 20);
 
-  // auto o = Factory::create<CallSmoke, int>("CallSmoke", 10);
-  // o->update();
-
-  // auto o2 = CREATE_V(CallSmoke, 10);
-  // o2->update();
-
-  // auto o1 = CREATE_V(CallPhone, CallPhoneParam{});
-  // auto o1 = CREATE_V(CallPhone, 100);
-  // o1->update();
-  // object->Preprocess(true);
-  // COUNT_ARGS(1, "12312", "asdasda");
+  std::cout << *f << std::endl;
 
   return 0;
 }

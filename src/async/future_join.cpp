@@ -11,6 +11,7 @@
  */
 
 #include <array>
+#include <functional>
 #include <future>
 #include <vector>
 #include "helper/common.hpp"
@@ -23,25 +24,36 @@ template <typename T>
 std::vector<T> join(std::vector<std::future<T>>& futures) noexcept {
   std::vector<T> results(futures.size());
   for (int i = 0; i < futures.size(); ++i) {
+    std::cout << "i = " << i << std::endl;
     results[i] = futures[i].get();
   }
   return results;
 }
 
 template <typename Rep, typename Period>
-Rep timeout_f(std::chrono::duration<Rep, Period> delay) noexcept {
+auto timeout_f(std::chrono::duration<Rep, Period> delay) noexcept {
   std::this_thread::sleep_for(delay);
   return delay.count();
 }
 
+int64_t f() {
+  return 0;
+}
+
 void test() {
-  std::packaged_task<int()> task([]() { return 10; });
-  std::future<int> future1 = task.get_future();
+  std::vector<std::future<int64_t>> wait_events;
+  std::vector<std::packaged_task<int64_t()>> wait_tasks;
 
-  std::packaged_task<int()> task2([]() { return 20; });
-  std::future<int> future2 = task2.get_future();
+  for (int i = 0; i < 10; ++i) {
+    std::packaged_task<int64_t()> task([] { return f(); });
+    wait_events.push_back(task.get_future());
+    wait_tasks.push_back(std::move(task));
+  }
 
-  // join<int>({std::move(future1), std::move(future2)});
+  auto res = join(wait_events);
+  for (const auto& item : res) {
+    std::cout << item << std::endl;
+  }
 }
 
 int main() {

@@ -12,6 +12,7 @@
 
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include "helper/common.hpp"
 #include "helper/type_trait_extends.hpp"
@@ -72,6 +73,8 @@ void test() {
   // Mock coroutine scheduler?
   Socket socket("Some socket data.");
   LOG_PRINT("Starting...");
+
+  EventLoop ev;
   while (true) {
     if (auto opt = SimpleFuture<Socket>::poll(
             socket, []() { std::cout << "Callback called" << std::endl; })) {

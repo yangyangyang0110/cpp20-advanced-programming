@@ -30,6 +30,8 @@ struct SimpleFuture {
   }
 };
 
-class EventLoop {};
+class EventLoop {
+  void add() noexcept {}
+};
 
 #endif // CPP20_ADVANCED_PROGRAMMING_SIMPLE_FUTURE_HPP

@@ -93,8 +93,7 @@ struct Generator {
     } // saving exception
 
     Generator get_return_object() noexcept {
-      return Generator{
-          std::coroutine_handle<promise_type>::from_promise(*this)};
+      return Generator{std::coroutine_handle<promise_type>::from_promise(*this)};
     }
 
     std::exception_ptr exception_;
