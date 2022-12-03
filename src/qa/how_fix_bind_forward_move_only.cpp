@@ -45,25 +45,12 @@ struct MoveOnly {
   }
 };
 
-template <typename F, typename... Args>
-struct FArgs {
-  explicit FArgs(F&& f, Args&&... args) noexcept
-      : f_(std::forward<F>(f)), args_(std::make_tuple(std::forward<Args>(args)...)) {}
-  std::invoke_result_t<F, Args...> invoke() { return std::apply(f_, std::move(args_)); }
-
-private:
-  F&& f_;
-  std::tuple<Args...> args_;
-};
-
-// void f(std::string&& value) {
-//   value.append("<<<");
-//   std::cout << value << std::endl;
-// }
-
-void f(MoveOnly &&value) {
-
+template <typename F, typename... Args, typename R = std::invoke_result_t<F, Args...>>
+R mBind(F&& f, Args&&... args) {
+  return std::apply(std::forward<F>(f), std::make_tuple(std::forward<Args>(args)...));
 }
+
+void f(MoveOnly&& value) {}
 
 struct Foo {
   std::string show(std::string&& value) {
@@ -73,19 +60,20 @@ struct Foo {
   }
 };
 
-template <typename F, typename... Args>
-auto m_bind(F&& f, Args&&... args) noexcept {
-  return FArgs{std::forward<F>(f), std::forward<Args>(args)...}.invoke();
-}
+// template <typename F, typename... Args>
+// auto m_bind(F&& f, Args&&... args) noexcept {
+//   return FArgs{}(std::forward<F>(f), std::forward<Args>(args)...);
+// }
 
 void test() noexcept {
   std::string value = "hello world";
   // m_bind(f, std::move(value));
   MoveOnly moveOnly{"move"};
-  m_bind(f, std::move(moveOnly));
+
+  mBind(f, std::move(moveOnly));
 
   value = "test for member function";
-  auto res = m_bind(&Foo::show, Foo{}, std::move(value));
+  auto res = mBind(&Foo::show, Foo{}, std::move(value));
   std::cout << res << std::endl;
 }
 
