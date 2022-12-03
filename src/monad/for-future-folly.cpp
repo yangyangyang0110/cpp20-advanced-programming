@@ -10,11 +10,13 @@
  * Copyright (c) 2022  . All rights reserved.
  */
 
+#if 0
 #include <folly/futures/Future.h>
 #include <folly/Random.h>
 #include <folly/Range.h>
 
 using namespace folly;
+#endif
 
 void test() {
   // Future<int> f = Promise<int>().getFuture();

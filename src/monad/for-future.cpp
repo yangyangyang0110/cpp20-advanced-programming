@@ -10,6 +10,7 @@
  * Copyright (c) 2022  . All rights reserved.
  */
 
+#if 0
 #define BOOST_THREAD_PROVIDES_FUTURE
 #define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
 
@@ -35,8 +36,9 @@ void test() {
   future<int> f2 = m_bind(f, [](const int& v) { return v + 10; });
   // std::cout << f2.get() << std::endl;
 }
+#endif
 
 int main() {
-  test();
+  // test();
   return 0;
 }
