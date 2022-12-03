@@ -1,19 +1,45 @@
-/* Proj: cpp20-advanced-programming
- * File: excepted.hpp
- * Created Date: 2022/11/20
+/* Proj: cpp-functional-programming
+ * File: for-excepted.cpp
+ * Created Date: 2022/11/12
  * Author: YangYangYang (yangyangyang0110@outlook.com)
  * Description:
  * -----
- * Last Modified: 2022/11/20 08:13:52
+ * Last Modified: 2022/11/12 19:17:17
  * Modified By: YangYangYang (yangyangyang0110@outlook.com)
  * -----
  * Copyright (c) 2022  . All rights reserved.
  */
-#ifndef CPP20_ADVANCED_PROGRAMMING_EXCEPTED_HPP
-#define CPP20_ADVANCED_PROGRAMMING_EXCEPTED_HPP
 
+#include <future>
+#include <iostream>
 #include <optional>
 #include <variant>
+
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4015.pdf
+
+struct DivideByZero : public std::exception {};
+
+double safe_divide(double x, double y) noexcept(false) {
+  if (y == 0)
+    throw DivideByZero();
+  return x / y;
+}
+
+// void test() {
+//   try {
+//     safe_divide(20, 10);
+//     safe_divide(10, 0);
+//   } catch (const std::exception &e) { std::cerr << "reason: " << e.what() <<
+//   std::endl;
+//   }
+// }
+
+// template <typename T>
+// concept MoveConstructorAble = requires(T x) {
+//                                   {
+//                                       T y = T(std::move(x));
+//                                   } noexcept;
+//                               };
 
 /**
  * @brief 如何约束T的能力集呢?
@@ -39,18 +65,6 @@ struct Excepted {
   }
 
 public:
-  constexpr const T* operator->() const noexcept {
-    if (!has_value_)
-      return nullptr;
-    return &value_;
-  }
-
-  constexpr T* operator->() noexcept {
-    if (!has_value_)
-      return nullptr;
-    return &value_;
-  }
-
   constexpr T& value() noexcept(false) {
     if (!has_value_)
       throw std::logic_error("No value");
@@ -139,41 +153,33 @@ private:
   };
 };
 
-// 好蠢
-template <typename T, typename E>
-Excepted<T, E> make_excepted(T&& value) {
-  return Excepted<T, E>::success(std::forward<T>(value));
-}
-
-template <typename T, typename E>
-Excepted<T, E> make_excepted(E&& error) {
-  return Excepted<T, E>::failure(std::forward<E>(error));
-}
-
-template <typename MyExcepted>
-MyExcepted make_excepted(MyExcepted&& except) {
-  return std::forward<MyExcepted>(except);
-}
-
-#if 0
-// helper type for the visitor #4
-template <class... Ts>
-struct overloaded : Ts... {
-  using Ts::operator()...;
+struct NonCopyable {
+  NonCopyable() = default;
+  NonCopyable(NonCopyable const&) = delete;
+  NonCopyable& operator=(NonCopyable const&) = delete;
 };
-// explicit deduction guide (not needed as of C++20)
-template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
 
-template <typename T, typename E>
-Excepted<T, E> make_excepted(const std::variant<T&&, E&&>& var) {
-  std::visit(
-      overloaded{
-          [](T&& value) { return Excepted<T, E>::success(std::move(value)); },
-          [](E&& error) { return Excepted<T, E>::success(std::move(error)); }},
-      var);
-}
-#endif
+enum class ErrorCode { InvalidParam = -1 };
+
+struct Foo {
+  using excepted_type = Excepted<Foo, ErrorCode>;
+  static inline excepted_type try_from(bool b) noexcept {
+    return b ? excepted_type::success(Foo())
+             : excepted_type::failure(ErrorCode::InvalidParam);
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, Foo const& foo) noexcept {
+    return os << foo.data << std::endl;
+  }
+
+public:
+  Foo() = default;
+  Foo(Foo&&) noexcept = default;
+  ~Foo() noexcept = default;
+
+private:
+  std::string data = "I'm a Foo";
+};
 
 template <
     typename F,
@@ -181,20 +187,20 @@ template <
     typename Except = Excepted<Ret, std::exception_ptr>>
 Except m_try(const F& f) noexcept {
   try {
-    return make_excepted(f());
+    return Except::success(f());
   } catch (...) {
-    return make_excepted(std::current_exception());
+    return Except::failure(std::current_exception());
   }
 }
 
 template <typename T, typename Variant, typename Except = Excepted<T, std::exception_ptr>>
 Except m_get_if(const Variant& variant) noexcept {
   auto* p = std::get_if<T>(variant);
-  return p ? make_excepted(p) : make_excepted("Variant not found the desired type.");
+  return p ? Except::success(p) : Except::failure("Variant not found the desired type.");
 }
 
 template <typename T, typename E>
-T& m_get_or_throw(Excepted<T, E>& except) noexcept(false) {
+T& get_or_throw(Excepted<T, E>& except) noexcept(false) {
   if (except) {
     except.value();
   } else {
@@ -202,9 +208,12 @@ T& m_get_or_throw(Excepted<T, E>& except) noexcept(false) {
   }
 }
 
-template <typename T, typename E, typename Except = Excepted<T, E>>
-T* m_get_if(Except&& except) noexcept {
-  return except ? except.value() : nullptr;
+void test() {
+  std::cout << Foo::try_from(true).value()
+            << static_cast<int>(Foo::try_from(false).error()) << std::endl;
 }
 
-#endif // CPP20_ADVANCED_PROGRAMMING_EXCEPTED_HPP
+int main() {
+  test();
+  return 0;
+}

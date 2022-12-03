@@ -12,4 +12,4 @@
 #include "call_smoke.hpp"
 #include "../factory.hpp"
 
-REGISTER_CLASS(CallSmoke, int);
+REGISTER_CLASS(CallSmoke);

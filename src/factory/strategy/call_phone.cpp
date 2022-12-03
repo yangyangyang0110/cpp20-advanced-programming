@@ -12,4 +12,4 @@
 #include "call_phone.hpp"
 #include "../factory.hpp"
 
-REGISTER_CLASS(CallPhone, CallPhoneParam&&);
+REGISTER_CLASS(CallPhone);

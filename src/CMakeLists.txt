@@ -9,4 +9,5 @@ add_subdirectory(async)
 add_subdirectory(serialize-deserialize)
 add_subdirectory(reflection)
 add_subdirectory(helper)
+add_subdirectory(monad)
 
