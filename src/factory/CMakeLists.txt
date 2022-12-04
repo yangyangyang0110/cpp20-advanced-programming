@@ -1,6 +1,7 @@
 add_executable(factory-main main.cpp
-  strategy/call_phone.cpp strategy/call_smoke.cpp)
-target_link_libraries(factory-main)
+  strategy/call_phone.cpp strategy/call_smoke.cpp
+  strategy/maybe_throw_strategy.cpp)
+#target_link_libraries(factory-main)
 
 #add_executable(factory-main main.cpp)
 #add_library(call_smoke SHARED strategy/call_smoke.cpp)

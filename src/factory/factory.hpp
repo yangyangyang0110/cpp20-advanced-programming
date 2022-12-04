@@ -54,15 +54,19 @@ private:
 };
 #else
 
-template <class Class>
+template <class Class, typename R = Excepted<Class, std::string>>
 struct ClassProxy {
   template <typename... Args>
-  std::optional<Class> operator()(Args&&... args) noexcept {
+  R operator()(Args&&... args) noexcept {
     if constexpr (std::is_constructible_v<Class, Args...>) {
       if constexpr (std::is_nothrow_constructible_v<Class, Args...>) {
-        return Class(std::forward<Args>(args)...);
+        return R::success(Class(std::forward<Args>(args)...));
       } else {
-        return std::nullopt;
+        try {
+          return R::success(Class(std::forward<Args>(args)...));
+        } catch (const std::exception& e) {
+          return R::failure(e.what());
+        }
       }
     } else {
       static_assert(is_always_false_v<Class>, "Class must has constructor.");
@@ -84,16 +88,14 @@ public:
     auto creatorRegistry = getCreatorRegistry();
     if (auto it = creatorRegistry.find(name); it != creatorRegistry.end()) {
       try {
-        // std::cout << "start classProxy: " << std::endl;
         auto classProxy = std::any_cast<ClassProxy<Class>>(it->second);
-        // std::cout << "end classProxy: " << std::endl;
-        if (auto opt = classProxy(std::forward<Args>(args)...)) {
-          return R::success(std::move(opt.value()));
+        if (auto exc = classProxy(std::forward<Args>(args)...)) {
+          return std::move(exc);
         } else {
-          return R::failure("Failed to create class: " + name);
+          return R::failure(
+              "Failed to create class: " + name + " reason: " + exc.error());
         }
       } catch (const std::bad_any_cast& e) {
-        std::cerr << e.what() << std::endl;
         return R::failure(e.what());
       }
     }

@@ -13,6 +13,7 @@
 #define CPP20_ADVANCED_PROGRAMMING_EXCEPTED_HPP
 
 #include <optional>
+#include <stdexcept>
 #include <variant>
 
 /**
@@ -83,6 +84,7 @@ public:
   }
 
   Excepted(Excepted&& other) noexcept : has_value_(other.has_value_) {
+    // std::cout << "Excepted Move Constructor" << std::endl;
     if (other.has_value_)
       new (&value_) T(std::move(other.value_));
     else
@@ -91,6 +93,7 @@ public:
 
   // 使用副本去做swap, 保证数据一致性.
   Excepted& operator=(Excepted other) {
+    // std::cout << "Excepted CSP" << std::endl;
     swap(other);
     return *this;
   }

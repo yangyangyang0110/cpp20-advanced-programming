@@ -18,6 +18,14 @@
   std::cout << std::tuple_size_v<decltype(std::make_tuple(__VA_ARGS__))> << std::endl
 
 int main() {
+  if (auto exc = Factory::getObject<MaybeThrow>("MaybeThrow", false); !exc) {
+    std::cerr << exc.error() << std::endl;
+  }
+
+  if (auto exc = Factory::getObject<MaybeThrow>("MaybeThrow", true); !exc) {
+    std::cerr << exc.error() << std::endl;
+  }
+
   if (auto exc = Factory::getObject<CallSmoke>("Call", 10)) {
     exc->update();
   } else {
