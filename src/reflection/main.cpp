@@ -12,4 +12,12 @@
 
 #include <iostream>
 
-int main() {}
+struct Foo {
+  Foo() noexcept = default;
+  void func(double){};
+  int data;
+};
+
+int main() {
+  return 0;
+}

@@ -31,6 +31,16 @@ struct get_value_type {
   using type = std::decay_t<typename T::value_type>;
 };
 
+template <typename T, typename Void = void>
+struct has_properties_type {
+  constexpr static inline bool value = false;
+};
+
+template <typename T>
+struct has_properties_type<T, std::void_t<decltype(T::properties)>> {
+  constexpr static inline bool value = true;
+};
+
 } // namespace detail
 
 template <typename T>
@@ -43,16 +53,24 @@ template <typename T>
 constexpr static inline bool has_value_type_v = detail::has_value_type<T>::value;
 
 template <typename T>
+constexpr static inline bool has_properties_type_v =
+    ::detail::has_properties_type<T>::value;
+
+template <typename T>
 using get_value_type_t = typename detail::get_value_type<T>::type;
 
 //
 struct Success {
   using value_type = int;
+  constexpr static inline std::tuple properties = {};
 };
 
 struct Failure {};
 
 static_assert(has_value_type_v<Success>);
 static_assert(!has_value_type_v<Failure>);
+
+static_assert(has_properties_type_v<Success>);
+static_assert(!has_properties_type_v<Failure>);
 
 #endif // CPP20_ADVANCED_PROGRAMMING_TYPE_TRAIT_EXTENDS_HPP
