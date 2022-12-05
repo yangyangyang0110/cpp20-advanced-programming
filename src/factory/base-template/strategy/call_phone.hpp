@@ -19,17 +19,17 @@ struct CallPhoneParam {
   int minimum_area{};
   std::string desc;
 
-  friend std::ostream& operator<<(
-      std::ostream& os, const CallPhoneParam& rhs) noexcept {
+  friend std::ostream& operator<<(std::ostream& os, const CallPhoneParam& rhs) noexcept {
     return os << "minimum area: " << rhs.minimum_area << " desc: " << rhs.desc;
   }
 };
 
+struct CallPhoneFrameData {};
+
 class CallPhone {
 public:
-  explicit CallPhone(CallPhoneParam&& param) noexcept
-      : param_(std::move(param)) {}
-  void update() const noexcept {
+  explicit CallPhone(CallPhoneParam&& param) noexcept : param_(std::move(param)) {}
+  void update(const CallPhoneFrameData& param) const noexcept {
     std::cout << "CallPhone: " << param_ << std::endl;
   }
 

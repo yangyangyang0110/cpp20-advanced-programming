@@ -26,14 +26,20 @@ int main() {
     std::cerr << exc.error() << std::endl;
   }
 
+  if (auto exc = Factory::getObject<CallSmoke>("CallPhone", 10)) {
+    exc->update(CallSmokeFrameData{});
+  } else {
+    std::cerr << exc.error() << std::endl;
+  }
+
   if (auto exc = Factory::getObject<CallSmoke>("Call", 10)) {
-    exc->update();
+    exc->update(CallSmokeFrameData{});
   } else {
     std::cerr << exc.error() << std::endl;
   }
 
   if (auto exc = FACTORY_CREATE(CallPhone, CallPhoneParam{10, "desc"})) {
-    exc->update();
+    exc->update(CallPhoneFrameData{});
   } else {
     std::cerr << exc.error() << std::endl;
   }

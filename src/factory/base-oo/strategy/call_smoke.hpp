@@ -13,13 +13,17 @@
 #define CPP20_ADVANCED_PROGRAMMING_CALL_SMOKE_HPP
 
 #include <iostream>
+#include "./base.hpp"
 
-class CallSmoke {
+struct CallSmokeFrameData {};
+
+class CallSmoke : public Base {
 public:
   explicit CallSmoke(int value) noexcept : value_(value) {}
 
-  void update() const noexcept {
-    std::cout << "update: " << value_ << std::endl;
+  void Update(void* frameData) noexcept override {
+    auto* param = reinterpret_cast<CallSmokeFrameData*>(frameData);
+    std::cout << "Update: " << value_ << std::endl;
   }
 
 private:
