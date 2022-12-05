@@ -34,7 +34,7 @@ struct MoveOnly {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const MoveOnly& ins) noexcept {
-    return std::cout << "data: " << ins.data_;
+    return os << "data: " << ins.data_;
   }
 };
 

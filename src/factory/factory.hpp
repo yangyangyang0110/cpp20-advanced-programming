@@ -118,7 +118,7 @@ private:
 
 #endif
 
-#define REGISTER_CLASS(type) bool b##type = Factory::registry(#type, ClassProxy<type>{})
+#define REGISTER_CLASS(type) bool _##type = Factory::registry(#type, ClassProxy<type>{})
 
 // #define REGISTER_CLASS(type) \
 //   bool b##type =             \
