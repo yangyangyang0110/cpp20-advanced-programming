@@ -71,3 +71,12 @@ TEST(THREAD_POOL, FOR_MEMBER_FUNCTION) {
   }
   ThreadPool::release();
 }
+
+TEST(THREAD_POOL, FOR_STACK_VAR) {
+  if (auto ptr = ThreadPool::getWeakInstance().lock()) {
+    int x = 10;
+    auto fut = ptr->execute([](int v) { return v; }, x); // Compiler error.
+    // ptr->execute([](int v) { return v; }, int(x));
+    EXPECT_EQ(fut.get(), x);
+  }
+}

@@ -37,26 +37,26 @@ struct NonCopyable {
   NonCopyable& operator=(const NonCopyable&) = delete;
 };
 
-template <typename F, typename... Args>
-struct FArgs {
-  explicit FArgs(F&& f, Args&&... args) noexcept
-      : f_(std::forward<F>(f)), args_(std::make_tuple(std::forward<Args>(args)...)) {}
+template <typename F>
+struct Functor {
+  explicit Functor(F&& f) noexcept : f_(std::forward<F>(f)) {}
 
-  std::invoke_result_t<F, Args...> invoke() {
-    return std::apply(std::forward<F>(f_), std::move(args_));
+  template <typename... Args>
+  std::invoke_result_t<F, Args...> operator()(std::tuple<Args...>&& args) {
+    return std::apply(std::forward<F>(f_), std::move(args));
   }
 
 private:
   F&& f_;
-  std::tuple<Args...> args_;
+  // std::tuple<Args...> args_;
 };
 
 /**
  *
  */
 class ThreadPool : public NonCopyable {
-  using task_type = std::function<void()>;
-  // using task_type = std::packaged_task<void()>;
+  // using task_type = std::function<void()>;
+  using task_type = std::packaged_task<void()>;
 
   std::vector<std::thread> threads_;
   std::queue<task_type> task_queue_;
@@ -83,13 +83,14 @@ public:
   template <typename F, typename... Args, typename R = std::invoke_result_t<F, Args...>>
   std::future<R> execute(F&& f, Args&&... args) {
     std::packaged_task<R()> task(
-        [wrap = FArgs(std::forward<F>(f), std::forward<Args>(args)...)]() mutable -> R {
-          return wrap.invoke();
+        [functor = Functor(std::forward<F>(f)),
+         args_tuple = std::make_tuple(std::forward<Args>(args)...)]() mutable -> R {
+          return functor(std::move(args_tuple));
         });
     auto fut = task.get_future();
 
     std::lock_guard lock(mutex_);
-    // package_task 内部有shared_ptr, 暂时用 functional.
+    // package_task 内部有shared_ptr.
     if constexpr (std::is_same_v<task_type, std::packaged_task<void()>>) {
       task_queue_.emplace([task = std::move(task)]() mutable { task(); });
     } else {
