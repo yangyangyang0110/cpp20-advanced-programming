@@ -180,7 +180,20 @@ std::packaged_task<Ret()> wrap(F&& f, Args&&... args) {
       std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 
+
+template <typename T>
+std::future<std::invoke_result_t<T>> test_lambda(T&& t) {
+  std::promise<int> a;
+  auto future = a.get_future();
+  a.set_value(1);
+  return future;
+}
+
+
 void test() {
+
+  test_lambda([] { return 1; }).wait();
+
   // thread_pool tp;
   // tp.submit(f, std::move(data));
   std::string data = "hello world";

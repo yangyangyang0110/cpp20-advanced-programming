@@ -175,11 +175,11 @@ bool remove_directory(const fs::path &dir_path)
 }
 
 std::optional<std::time_t> try_to_time_t(const std::string &datetime,
-                                         const std::regex &reg = std::regex{
+                                         const std::regex &reflect = std::regex{
                                              R"((\d{4})-(\d{2})-(\d{2}))"})
 {
     std::smatch pieces_match;
-    const auto match_result = std::regex_match(datetime, pieces_match, reg);
+    const auto match_result = std::regex_match(datetime, pieces_match, reflect);
     if (!match_result) return std::nullopt;
 
     const auto &&[year, month, day] =

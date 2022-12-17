@@ -56,7 +56,7 @@ T from_json(const json& data) noexcept {
 
   // loop at compile time.
   for_sequence(std::make_index_sequence<num_properties>{}, [&](auto i) {
-    // get property.
+    // get addMemberVar.
     auto& property = std::get<i>(T::properties);
     using Type = typename std::decay_t<decltype(property)>::type;
     data.at(property.name).get_to(res.*property.member);
