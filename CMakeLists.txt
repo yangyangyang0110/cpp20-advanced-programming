@@ -20,6 +20,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(spdlog)
 include(json)
 include(gtest)
+include(yaml-cpp)
 # conan
 include(range-v3/conanbuildinfo)
 conan_basic_setup(TARGETS) # Introduce Conan-generated targets
@@ -65,6 +66,7 @@ function(dynamic_build_execute prefix)
 			pthread
 			spdlog::spdlog
 			nlohmann_json::nlohmann_json
+			yaml-cpp::yaml-cpp
 			$<$<BOOL:${IS_TEST_TARGET}>:GTest::gtest_main>
 			CONAN_PKG::range-v3
 		)

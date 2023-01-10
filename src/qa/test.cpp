@@ -10,196 +10,184 @@
  * Copyright (c) 2022  . All rights reserved.
  */
 
-/**
- * @file thread_pool.h
- * @author Sinter Wong (sintercver@gmail.com)
- * @brief
- * @version 0.1
- * @date 2022-05-16
- *
- * @copyright Copyright (c) 2022
- *
- */
-
-#ifndef __SIMPLE_THREAD_POOL_H_
-#define __SIMPLE_THREAD_POOL_H_
-
-/**
- * @brief 线程池是一个生产者消费者模型，由主线程生产任务，一堆子线程消费任务
- *
- */
-
-#include <condition_variable>
-#include <functional>
-#include <future>
+#include <cstdint>
 #include <iostream>
-#include <memory>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include <map>
+#include <string>
+#include <variant>
 
-class task {
-public:
-  task() = default;
+#define ASSERT(condition, msg)                                             \
+  do {                                                                     \
+    if (!(condition)) {                                                    \
+      std::cerr << "Assert: " << #condition << " && " << msg << std::endl; \
+      abort();                                                             \
+    }                                                                      \
+  } while (0)
 
-  template <typename Func>
-  task(Func&& f) : ptr_(new wrapper{std::move(f)}){};
+namespace detail {
 
-  void operator()() { ptr_->call(); }
+template <class T, typename Void = void>
+struct has_param_type : std::bool_constant<false> {};
 
-private:
-  class wrapper_base {
-  public:
-    virtual void call() = 0;
-    virtual ~wrapper_base() {}
-  };
-
-  template <typename Func>
-  class wrapper : public wrapper_base {
-  public:
-    wrapper(Func&& func) : f_(std::move(func)) {}
-    virtual void call() override { f_(); };
-
-  private:
-    Func f_;
-  };
-
-  std::unique_ptr<wrapper_base> ptr_;
+template <class T>
+struct has_param_type<T, std::void_t<typename T::param_type>> : std::bool_constant<true> {
 };
 
-class thread_pool {
+template <class T, std::enable_if_t<has_param_type<T>::value, int> = 0>
+struct get_param_type {
+  using type = typename T::param_type;
+};
+
+} // namespace detail
+
+template <class T>
+constexpr static inline bool has_param_type_v = detail::has_param_type<T>::value;
+
+template <class T>
+using get_param_type_t = typename detail::get_param_type<T>::type;
+
+/**
+ *
+ */
+
+enum AlgorType : int32_t { UNKNOWN = -1, FACE = 0, PERSON };
+
+struct FaceParam {
+  int x;
+  float y;
+  double z;
+
+  friend std::ostream& operator<<(std::ostream& os, const FaceParam& ins) noexcept {
+    return os << "[FaceParam] " << ins.x << ", " << ins.y << ", " << ins.z;
+  }
+};
+
+struct PersonParam {
+  std::string data;
+
+  friend std::ostream& operator<<(std::ostream& os, const PersonParam& ins) noexcept {
+    return os << "[PersonParam] " << ins.data;
+  }
+};
+
+struct ParamWrap {
+  int algorType;
+  void* param;
+};
+
+//! int to param_type mapping.
+template <int>
+struct X {};
+
+#define REGISTRY_MAP(algorType, paramType) \
+  template <>                              \
+  struct X<algorType> {                    \
+    using param_type = paramType;          \
+  }
+
+REGISTRY_MAP(FACE, FaceParam);
+REGISTRY_MAP(PERSON, PersonParam);
+
+#define TMP                       1 << 2
+
+#define SENSOR_CONFIG0            0
+#define SENSOR_CONFIG0_STOP       BIT(0)
+#define SENSOR_CONFIG0_CPTR_OVER  BIT(2)
+#define SENSOR_CONFIG0_OVER       BIT(3)
+#define SENSOR_CONFIG0_TCALC_OVER BIT(4)
+#define SENSOR_CONFIG0_TALL_MASK  (0xfffff << 8)
+#define SENSOR_CONFIG0_TALL_SHIFT 8
+
+//! Assert
+static_assert(has_param_type_v<X<FACE>>);
+static_assert(!has_param_type_v<X<-1>>);
+
+template <int e, typename R = get_param_type_t<X<e>>>
+inline R toParamType(const void* p) noexcept {
+  return *(R*)p; // Copy Param
+}
+
+std::variant<PersonParam, FaceParam> toParamType(const ParamWrap& wrap) noexcept {
+  switch (wrap.algorType) {
+    case FACE:
+      return toParamType<FACE>(wrap.param);
+    case PERSON:
+      return toParamType<PERSON>(wrap.param);
+    default:
+      return {};
+  }
+}
+
+class ConfigCenter {
 public:
-  thread_pool() : running(false) {}
+  using param_type = std::variant<PersonParam, FaceParam>;
 
-  ~thread_pool() {
-    // 如果用户用完没有调用stop()，那么线程没有释放就会报错，所以析构的时候还是手动调用一下stop()吧
-    stop();
-  }
+  explicit ConfigCenter() noexcept = default;
 
-  void start(size_t n) {
-    if (running) {
-      return;
-    }
-    running = true;
-    threads_.reserve(n);
-    while (n--) {
-      threads_.emplace_back(&thread_pool::worker, this);
-    }
-  }
-
-  void stop() {
-    if (!running) {
-      return;
-    }
-    {
-      // 上锁，因为要释放了，所以需要所有线程停止工作
-      std::lock_guard<std::mutex> lk(m_);
-      running = false;
-
-      not_empty_.notify_all();
-      not_full_.notify_all();
-    }
-
-    // 释放掉所有的线程
-    for (auto& t : threads_) {
-      if (t.joinable()) {
-        t.join();
+  template <bool UpdateIf = true>
+  void Add(const std::string& key, const ParamWrap& paramWrap) noexcept {
+    if constexpr (UpdateIf) {
+      paramMap_[key] = toParamType(paramWrap);
+    } else {
+      if (auto it = paramMap_.find(key); it == paramMap_.end()) {
+        paramMap_[key] = toParamType(paramWrap);
       }
     }
   }
 
-  template <
-      typename Func,
-      typename... Args,
-      typename Ret = std::invoke_result_t<Func, Args...>>
-  std::future<Ret> submit(Func&& f, Args&&... args) {
-    std::unique_lock<std::mutex> lk(m_);
-    // not_full_.wait(lk, [this] { return !running || !q_.full(); });
-    // if (!running) {
-    //   return {};
-    // }
-
-    // std::packaged_task<Ret(Args...)> pt(std::forward<Func>(f));
-    std::packaged_task<Ret()> pt(std::packaged_task<Ret()>(
-        std::bind(std::forward<Func>(f), std::forward<Args>(args)...)));
-    auto ret = pt.get_future();
-
-    task ptr(std::move(pt));
-    q_.push(std::move(ptr));
-    not_empty_.notify_one();
-
-    return ret;
+  template <class T>
+  const T* Get(const std::string& key) noexcept {
+    if (auto it = paramMap_.find(key); it != paramMap_.end()) {
+      return std::get_if<T>(&it->second);
+    }
+    return nullptr;
   }
 
 private:
-  // 生产者(submit)在外界不断给出任务，消费者(worker)需要不停的监视是否存在任务，因此需要设置无限循环
-  void worker() {
-    while (true) {
-      task t;
-      {
-        std::unique_lock<std::mutex> lk(m_);
-        not_empty_.wait(lk, [this] { return !running || !q_.empty(); });
-        if (!running) {
-          return;
-        }
-        t = std::move(q_.front());
-        q_.pop();
-        not_full_.notify_one();
-      }
-      // 函数的执行需要进行一段时间，这段时间内不需要上锁，因此需要释放掉
-      // unique_lock
-      t();
-    }
-  }
-
-  std::vector<std::thread> threads_;
-
-  // 任务队列需要选用长度固定的循环队列，防止溢出
-  // circular_buffer<task, 8> q_;
-
-  std::queue<task> q_;
-  std::condition_variable not_full_; // 不未满条件
-  std::condition_variable not_empty_; // 不为空条件
-  std::mutex m_;
-
-  bool running;
+  std::map<std::string, param_type> paramMap_;
 };
-
-#endif
-
-void f(const std::string& value) {
-  std::cout << value << std::endl;
-}
-
-template <typename F, typename... Args, typename Ret = std::invoke_result_t<F, Args...>>
-std::packaged_task<Ret()> wrap(F&& f, Args&&... args) {
-  return std::packaged_task<Ret()>(
-      std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-}
-
-
-template <typename T>
-std::future<std::invoke_result_t<T>> test_lambda(T&& t) {
-  std::promise<int> a;
-  auto future = a.get_future();
-  a.set_value(1);
-  return future;
-}
-
 
 void test() {
+  ConfigCenter configCenter;
 
-  test_lambda([] { return 1; }).wait();
+  {
+    FaceParam faceParam{1, 2.0f, 3.0};
+    PersonParam personParam{"person"};
 
-  // thread_pool tp;
-  // tp.submit(f, std::move(data));
-  std::string data = "hello world";
-  // std::bind(f, std::move(data));
-  // auto task = wrap(f, std::move(data));
-  auto task = wrap(f, data);
+    configCenter.Add("Face", ParamWrap{FACE, &faceParam});
+    configCenter.Add("Person", ParamWrap{PERSON, &personParam});
+
+    ASSERT(configCenter.Get<FaceParam>("Face"), "Type Error");
+    ASSERT(configCenter.Get<PersonParam>("Person"), "Type Error");
+    std::cout << *configCenter.Get<FaceParam>("Face") << std::endl;
+    std::cout << *configCenter.Get<PersonParam>("Person") << std::endl;
+  }
+
+  {
+    FaceParam faceParam{5, 20.0f, 30.0};
+    PersonParam personParam{"xxx"};
+
+    configCenter.Add("Face", ParamWrap{FACE, &faceParam});
+    configCenter.Add("Person", ParamWrap{PERSON, &personParam});
+
+    ASSERT(configCenter.Get<FaceParam>("Face"), "Type Error");
+    ASSERT(configCenter.Get<PersonParam>("Person"), "Type Error");
+    std::cout << *configCenter.Get<FaceParam>("Face") << std::endl;
+    std::cout << *configCenter.Get<PersonParam>("Person") << std::endl;
+  }
+
+  {
+    FaceParam faceParam{5, 20.0f, 30.0};
+    PersonParam personParam{"yyy"};
+
+    configCenter.Add("Face", ParamWrap{UNKNOWN, &faceParam});
+    configCenter.Add("Person", ParamWrap{PERSON, &personParam});
+
+    // ASSERT(configCenter.Get<FaceParam>("Face"), "Type Error");
+    ASSERT(configCenter.Get<PersonParam>("Person"), "Type Error");
+    // std::cout << *configCenter.Get<FaceParam>("Face") << std::endl;
+    std::cout << *configCenter.Get<PersonParam>("Person") << std::endl;
+  }
 }
 
 int main() {
